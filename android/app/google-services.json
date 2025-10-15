@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1037991048727",
+    "project_id": "hotelexpenses-3719c",
+    "storage_bucket": "hotelexpenses-3719c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1037991048727:android:04e8a58bd39a637b4ece52",
+        "android_client_info": {
+          "package_name": "com.example.hotelexpenses"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDSV8mPmlQg3hM2hY4EZo9HLDi70J8vWNw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
