@@ -1,36 +1,39 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Order {
   String id;
   String waiterId;
-  DateTime date;
-  List<Map<String, dynamic>> items;
-  double totalAmount;
+  String productId;
+  String productName;
+  int quantity;
+  double totalPrice;
 
   Order({
     required this.id,
     required this.waiterId,
-    required this.date,
-    required this.items,
-    required this.totalAmount,
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.totalPrice,
   });
 
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'waiterId': waiterId,
-      'date': date,
-      'items': items,
-      'totalAmount': totalAmount,
+      'productId': productId,
+      'productName': productName,
+      'quantity': quantity,
+      'totalPrice': totalPrice,
     };
   }
 
-  factory Order.fromMap(String id, Map<String, dynamic> map) {
+  factory Order.fromMap(Map<String, dynamic> map) {
     return Order(
-      id: id,
+      id: map['id'],
       waiterId: map['waiterId'],
-      date: (map['date'] as Timestamp).toDate(),
-      items: List<Map<String, dynamic>>.from(map['items']),
-      totalAmount: map['totalAmount'],
+      productId: map['productId'],
+      productName: map['productName'],
+      quantity: map['quantity'],
+      totalPrice: (map['totalPrice'] as num).toDouble(),
     );
   }
 }

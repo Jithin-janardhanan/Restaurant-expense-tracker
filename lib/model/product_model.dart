@@ -1,9 +1,9 @@
 class Product {
   String id;
   String name;
-  int? count; // quantity for countable products
-  double? price; // price per item for countable products
-  Map<String, double>? portionPrice; // price for each portion: qtr, half, full
+  int? count;
+  double? price;
+  Map<String, double>? portionPrice;
 
   Product({
     required this.id,
@@ -31,9 +31,19 @@ class Product {
       price: map['price'] != null ? (map['price'] as num).toDouble() : null,
       portionPrice: map['portionPrice'] != null
           ? Map<String, double>.from(
-              (map['portionPrice'] as Map).map((k, v) => MapEntry(k, (v as num).toDouble())),
+              (map['portionPrice'] as Map).map(
+                (k, v) => MapEntry(k, (v as num).toDouble()),
+              ),
             )
           : null,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Product && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
