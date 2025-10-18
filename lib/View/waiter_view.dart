@@ -3,6 +3,8 @@ import 'package:hotelexpenses/controller/waiter_controller.dart';
 import 'package:hotelexpenses/model/waiter_model.dart';
 
 class WaiterScreen extends StatefulWidget {
+  const WaiterScreen({super.key});
+
   @override
   _WaiterScreenState createState() => _WaiterScreenState();
 }
@@ -94,12 +96,14 @@ class _WaiterScreenState extends State<WaiterScreen> {
               child: StreamBuilder<List<Waiter>>(
                 stream: waiterController.getWaiters(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData)
+                  if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
+                  }
 
                   final waiters = snapshot.data!;
-                  if (waiters.isEmpty)
+                  if (waiters.isEmpty) {
                     return Center(child: Text('No waiters added'));
+                  }
 
                   return ListView.builder(
                     itemCount: waiters.length,

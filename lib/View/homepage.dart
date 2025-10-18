@@ -3,9 +3,10 @@ import 'package:hotelexpenses/View/order_view.dart';
 import 'package:hotelexpenses/View/product_view.dart';
 import 'package:hotelexpenses/View/waiter_view.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

@@ -3,6 +3,8 @@ import 'package:hotelexpenses/controller/product_controller.dart';
 import 'package:hotelexpenses/model/product_model.dart';
 
 class ProductScreen extends StatefulWidget {
+  const ProductScreen({super.key});
+
   @override
   _ProductScreenState createState() => _ProductScreenState();
 }
@@ -153,12 +155,14 @@ class _ProductScreenState extends State<ProductScreen> {
               child: StreamBuilder<List<Product>>(
                 stream: productController.getProducts(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData)
+                  if (!snapshot.hasData) {
                     return Center(child: CircularProgressIndicator());
+                  }
 
                   final products = snapshot.data!;
-                  if (products.isEmpty)
+                  if (products.isEmpty) {
                     return Center(child: Text('No products added'));
+                  }
 
                   return ListView.builder(
                     itemCount: products.length,
