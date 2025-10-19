@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:hotelexpenses/View/expenses.dart';
 import 'package:hotelexpenses/View/order_view.dart';
 import 'package:hotelexpenses/View/product_view.dart';
 import 'package:hotelexpenses/View/waiter_view.dart';
-
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // These are the grid items shown on the home page
+    final List<Map<String, dynamic>> homeTiles = [
+      {
+        'title': 'Orders',
+        'icon': Icons.receipt_long,
+        'page': const OrderPage(),
+      },
+      {
+        'title': 'Expenses',
+        'icon': Icons.attach_money,
+        'page': const ExpensesView(),
+      },
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: Text('Hotel Management')),
+      appBar: AppBar(title: const Text('Hotel Management')),
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
+            const DrawerHeader(
               decoration: BoxDecoration(color: Colors.blue),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -30,46 +44,74 @@ class HomePage extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Waiters'),
-              onTap: () {
-                Navigator.pop(context); // close drawer
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => WaiterScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.shopping_cart),
-              title: Text('Products'),
+              leading: const Icon(Icons.person),
+              title: const Text('Waiters'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductScreen()),
+                  MaterialPageRoute(builder: (context) => const WaiterScreen()),
                 );
               },
             ),
             ListTile(
-              leading: Icon(Icons.receipt_long),
-              title: Text('Orders'),
+              leading: const Icon(Icons.shopping_cart),
+              title: const Text('Products'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => OrderPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const ProductScreen(),
+                  ),
                 );
               },
             ),
           ],
         ),
       ),
-      body: Center(
-        child: Text(
-          'Welcome to Hotel Management System',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: GridView.builder(
+          itemCount: homeTiles.length,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2, // two tiles per row
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+          ),
+          itemBuilder: (context, index) {
+            final item = homeTiles[index];
+            return InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => item['page']),
+                );
+              },
+              child: Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                color: Colors.blue.shade50,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(item['icon'], size: 50, color: Colors.blue),
+                    const SizedBox(height: 10),
+                    Text(
+                      item['title'],
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

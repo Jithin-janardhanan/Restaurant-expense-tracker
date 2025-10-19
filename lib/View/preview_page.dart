@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hotelexpenses/View/commision_popup.dart';
+import 'package:hotelexpenses/controller/comission_controller.dart';
+
 import 'package:hotelexpenses/controller/preview_controller.dart';
 import 'package:hotelexpenses/model/preview_model.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +15,31 @@ class OrderPreviewPage extends StatefulWidget {
 
 class _OrderPreviewPageState extends State<OrderPreviewPage> {
   final controller = OrderPreviewController();
+
   double _commissionPercent = 0;
   double _thresholdAmount = 0;
   double _higherCommissionPercent = 0;
+
+  final commissionController = CommissionController(); // 👈 add this
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCommission(); // 👈 load the saved commission when the page opens
+  }
+
+  Future<void> _loadCommission() async {
+    final data = await commissionController.getLatestCommission();
+
+    if (data != null) {
+      setState(() {
+        _commissionPercent = (data['percent'] ?? 0).toDouble();
+        _thresholdAmount = (data['threshold'] ?? 0).toDouble();
+        _higherCommissionPercent = (data['higherPercent'] ?? 0).toDouble();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,6 +63,13 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
                   _thresholdAmount = result['threshold'];
                   _higherCommissionPercent = result['higherPercent'];
                 });
+
+                //  Save to Firestore
+                await commissionController.saveCommissionSettings(
+                  percent: _commissionPercent,
+                  threshold: _thresholdAmount,
+                  higherPercent: _higherCommissionPercent,
+                );
               }
             },
           ),
@@ -178,127 +209,166 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
   }
 
   Widget _buildReportTile(OrderReport report) {
-    // 🔹 Calculate commission based on total
-    final commissionRate = (report.totalAmount > _thresholdAmount)
-        ? _higherCommissionPercent
-        : _commissionPercent;
-    final commissionEarned = report.totalAmount * commissionRate / 100;
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: commissionController.getCommissionForDate(report.date),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.all(12.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Card(
-      elevation: 3,
-      margin: const EdgeInsets.all(8),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: Colors.blue,
-          child: Text(
-            report.waiterName.isNotEmpty
-                ? report.waiterName[0].toUpperCase()
-                : '?',
-            style: const TextStyle(color: Colors.white),
-          ),
-        ),
-        title: Text(
-          report.waiterName,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        subtitle: Text(
-          DateFormat('dd MMM yyyy').format(report.date),
-          style: const TextStyle(color: Colors.grey),
-        ),
+        final data = snapshot.data;
+        if (data == null) {
+          return ListTile(
+            title: Text(report.waiterName),
+            subtitle: const Text('No commission data found for this date'),
+          );
+        }
 
-        // ✅ Compact trailing widget to prevent overflow
-        trailing: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Text(
-              '₹${report.totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Colors.green,
+        final commissionPercent = (data['percent'] ?? 0).toDouble();
+        final threshold = (data['threshold'] ?? 0).toDouble();
+        final higherPercent = (data['higherPercent'] ?? commissionPercent)
+            .toDouble();
+
+        final commissionRate = (report.totalAmount > threshold)
+            ? higherPercent
+            : commissionPercent;
+        final commissionEarned = report.totalAmount * commissionRate / 100;
+        final netAmount = report.totalAmount - commissionEarned;
+
+        return Card(
+          elevation: 3,
+          margin: const EdgeInsets.all(8),
+          child: ExpansionTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.blue,
+              child: Text(
+                report.waiterName.isNotEmpty
+                    ? report.waiterName[0].toUpperCase()
+                    : '?',
+                style: const TextStyle(color: Colors.white),
               ),
             ),
-            if (_commissionPercent > 0)
-              Text(
-                '+ ₹${commissionEarned.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  color: Colors.blueGrey,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 13,
-                ),
-              ),
-          ],
-        ),
-
-        children: [
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            title: Text(
+              report.waiterName,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            subtitle: Text(
+              DateFormat('dd MMM yyyy').format(report.date),
+              style: const TextStyle(color: Colors.grey),
+            ),
+            trailing: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
-                  'Order Details:',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 8),
-                ...report.orders.map(
-                  (o) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      children: [
-                        Expanded(flex: 3, child: Text(o.productName)),
-                        Expanded(child: Text('Qty: ${o.quantity}')),
-                        Expanded(
-                          child: Text(
-                            '₹${o.totalPrice.toStringAsFixed(2)}',
-                            textAlign: TextAlign.right,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.green,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                Text(
+                  '₹${report.totalAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.green,
                   ),
                 ),
-                const Divider(),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                Text(
+                  '- ₹${commissionEarned.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.redAccent,
+                    fontWeight: FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+                Text(
+                  '= ₹${netAmount.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    color: Colors.blueGrey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            children: [
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Total Items: ${report.orders.length}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    const Text(
+                      'Order Details:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 8),
+                    ...report.orders.map(
+                      (o) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Expanded(flex: 3, child: Text(o.productName)),
+                            Expanded(child: Text('Qty: ${o.quantity}')),
+                            Expanded(
+                              child: Text(
+                                '₹${o.totalPrice.toStringAsFixed(2)}',
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total: ₹${report.totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
+                          'Total Items: ${report.orders.length}',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        if (_commissionPercent > 0)
-                          Text(
-                            'Commission (${commissionRate.toStringAsFixed(1)}%): ₹${commissionEarned.toStringAsFixed(2)}',
-                            style: const TextStyle(
-                              color: Colors.blueGrey,
-                              fontWeight: FontWeight.w500,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              'Total: ₹${report.totalAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          ),
+                            Text(
+                              'Commission (${commissionRate.toStringAsFixed(1)}%): -₹${commissionEarned.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            Text(
+                              'Net Total: ₹${netAmount.toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                color: Colors.blueGrey,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

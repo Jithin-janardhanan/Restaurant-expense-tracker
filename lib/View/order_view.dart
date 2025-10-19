@@ -510,7 +510,7 @@ class _OrderPageState extends State<OrderPage> {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             icon: const Icon(Icons.save),
-                            label: const Text('Save Day Data'),
+                            label: const Text('Save Data'),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.all(16),
                               backgroundColor: Colors.blue,
