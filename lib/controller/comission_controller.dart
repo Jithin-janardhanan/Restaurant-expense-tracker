@@ -54,7 +54,7 @@ class CommissionController {
         'effectiveFrom': now,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      log("✅ New commission settings saved (${percent}%) effective from $now");
+      log("✅ New commission settings saved ($percent%) effective from $now");
     } catch (e) {
       log("❌ Failed to save commission: $e");
       rethrow;

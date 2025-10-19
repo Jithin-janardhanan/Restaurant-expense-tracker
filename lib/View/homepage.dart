@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hotelexpenses/View/add_items.dart';
 import 'package:hotelexpenses/View/expenses.dart';
 import 'package:hotelexpenses/View/order_view.dart';
 import 'package:hotelexpenses/View/product_view.dart';
@@ -19,7 +20,7 @@ class HomePage extends StatelessWidget {
       {
         'title': 'Expenses',
         'icon': Icons.attach_money,
-        'page': const ExpensesView(),
+        'page': const AddExpensePage(),
       },
     ];
 
@@ -63,6 +64,19 @@ class HomePage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ProductScreen(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.shopping_cart),
+              title: const Text('add items'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AddCategoryPage(),
                   ),
                 );
               },
