@@ -139,48 +139,124 @@ class _OrderPageState extends State<OrderPage> {
             const SizedBox(height: 10),
 
             // Product Dropdown
+            // 🔍 Product Search + Select
             StreamBuilder<List<Product>>(
               stream: productController.getProducts(),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
+                  return const Center(child: CircularProgressIndicator());
                 }
+
                 final products = snapshot.data!;
+                return GestureDetector(
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.white,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(20),
+                        ),
+                      ),
+                      builder: (context) {
+                        TextEditingController searchController =
+                            TextEditingController();
+                        List<Product> filteredProducts = List.from(products);
 
-                if (!products.contains(selectedProduct)) {
-                  selectedProduct = null;
-                }
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButton<String>(
-                    hint: const Text('Select Product'),
-                    value: selectedProduct?.id,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    onChanged: (id) {
-                      final product = products.firstWhere((p) => p.id == id);
-                      setState(() {
-                        selectedProduct = product;
-                        selectedPortion = null;
-                      });
-                    },
-                    items: products
-                        .map(
-                          (p) => DropdownMenuItem(
-                            value: p.id,
-                            child: Text(p.name),
-                          ),
-                        )
-                        .toList(),
+                        return StatefulBuilder(
+                          builder: (context, setStateSheet) {
+                            return Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text(
+                                    'Select Product',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  TextField(
+                                    controller: searchController,
+                                    decoration: InputDecoration(
+                                      prefixIcon: const Icon(Icons.search),
+                                      hintText: 'Search products...',
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onChanged: (value) {
+                                      setStateSheet(() {
+                                        filteredProducts = products
+                                            .where(
+                                              (p) =>
+                                                  p.name.toLowerCase().contains(
+                                                    value.toLowerCase(),
+                                                  ),
+                                            )
+                                            .toList();
+                                      });
+                                    },
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Expanded(
+                                    child: ListView.builder(
+                                      itemCount: filteredProducts.length,
+                                      itemBuilder: (context, index) {
+                                        final product = filteredProducts[index];
+                                        return ListTile(
+                                          title: Text(product.name),
+                                          subtitle: product.portionPrice != null
+                                              ? const Text(
+                                                  'Portion-based product',
+                                                )
+                                              : Text('₹${product.price ?? 0}'),
+                                          onTap: () {
+                                            setState(() {
+                                              selectedProduct = product;
+                                              selectedPortion = null;
+                                            });
+                                            Navigator.pop(context);
+                                          },
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          selectedProduct?.name ?? 'Select Product',
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        const Icon(Icons.arrow_drop_down),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
+
             const SizedBox(height: 10),
 
             // Portion (if applicable)

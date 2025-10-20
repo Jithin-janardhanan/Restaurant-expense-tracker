@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:hotelexpenses/View/commision_popup.dart';
 import 'package:hotelexpenses/controller/comission_controller.dart';
@@ -115,14 +116,36 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
                   );
                 }
 
-                final grandTotal = reports.fold<double>(
-                  0.0,
-                  (sum, r) => sum + r.totalAmount,
-                );
+                // final grandTotal = reports.fold<double>(
+                //   0.0,
+                //   (sum, r) => sum + r.totalAmount,
+                // );
+                double grandTotal = 0.0;
+                double totalCommission = 0.0;
+
+                for (final r in reports) {
+                  grandTotal += r.totalAmount;
+
+                  // Get commission per waiter for this report
+                  final commissionRate = (r.totalAmount > _thresholdAmount)
+                      ? _higherCommissionPercent
+                      : _commissionPercent;
+
+                  // Calculate based on waiter’s total
+                  final commissionEarned = r.totalAmount * commissionRate / 100;
+                  totalCommission += commissionEarned;
+                }
+
+                final netIncome = grandTotal - totalCommission;
 
                 return Column(
                   children: [
-                    _buildGrandTotalCard(grandTotal),
+                    _buildGrandTotalCard(
+                      grandTotal,
+                      totalCommission,
+                      netIncome,
+                    ),
+
                     Expanded(
                       child: ListView.builder(
                         itemCount: reports.length,
@@ -181,31 +204,105 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
     );
   }
 
-  Widget _buildGrandTotalCard(double total) {
+  Widget _buildGrandTotalCard(
+    double total,
+    double commission,
+    double netIncome,
+  ) {
+    // Save daily summary to Firestore for Profit & Loss
+    _saveDailySummary(total, commission, netIncome);
+
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 12),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       color: Colors.blue.shade50,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Grand Total:',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Grand Total (Sales):',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '₹${total.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              '₹${total.toStringAsFixed(2)}',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.green,
-              ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Total Waiter Commission:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.redAccent,
+                  ),
+                ),
+                Text(
+                  '- ₹${commission.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Net Income (After Commission):',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '₹${netIncome.toStringAsFixed(2)}',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _saveDailySummary(
+    double total,
+    double commission,
+    double netIncome,
+  ) async {
+    final today = DateTime.now();
+    final dateKey = DateFormat('yyyy-MM-dd').format(today);
+
+    final summaryRef = FirebaseFirestore.instance
+        .collection('hotel_summary')
+        .doc(dateKey); // one doc per day
+
+    await summaryRef.set({
+      'date': Timestamp.fromDate(today),
+      'totalSales': total,
+      'totalCommission': commission,
+      'netIncome': netIncome,
+      'timestamp': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
   }
 
   Widget _buildReportTile(OrderReport report) {

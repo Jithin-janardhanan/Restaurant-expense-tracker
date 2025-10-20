@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hotelexpenses/controller/category_controll.dart';
+import 'package:hotelexpenses/controller/item_controll.dart';
 
 class AddCategoryPage extends StatefulWidget {
   const AddCategoryPage({super.key});
@@ -26,16 +26,7 @@ class _AddCategoryPageState extends State<AddCategoryPage> {
               decoration: const InputDecoration(labelText: 'Category Name'),
             ),
             const SizedBox(height: 16),
-            // DropdownButton<String>(
-            //   value: _type,
-            //   onChanged: (value) {
-            //     setState(() => _type = value!);
-            //   },
-            //   items: [
-            //     'Expense',
-            //     'Income',
-            //   ].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            // ),
+       
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () async {

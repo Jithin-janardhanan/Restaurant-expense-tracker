@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hotelexpenses/View/Report_page.dart';
 import 'package:hotelexpenses/View/add_items.dart';
 import 'package:hotelexpenses/View/expenses.dart';
 import 'package:hotelexpenses/View/order_view.dart';
@@ -21,6 +22,11 @@ class HomePage extends StatelessWidget {
         'title': 'Expenses',
         'icon': Icons.attach_money,
         'page': const AddExpensePage(),
+      },
+      {
+        'title': 'Report',
+        'icon': Icons.auto_graph_rounded,
+        'page': const ReportsPage(),
       },
     ];
 

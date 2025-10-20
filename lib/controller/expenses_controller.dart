@@ -14,7 +14,7 @@ class ExpenseController {
     await _expensesRef.add({
       'category_id': categoryId,
       'category_name': categoryName,
-      'type': type, // Expense or Income
+      'type': type, // Expense 
       'amount': amount,
       'date': Timestamp.fromDate(date),
       'created_at': FieldValue.serverTimestamp(),

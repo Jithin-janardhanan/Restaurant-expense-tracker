@@ -1,38 +1,4 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'dart:developer';
 
-// class CommissionController {
-//   final _ref = FirebaseFirestore.instance.collection('settings');
-
-//   Future<void> saveCommissionSettings({
-//     required double percent,
-//     required double threshold,
-//     required double higherPercent,
-//   }) async {
-//     try {
-//       await _ref.doc('commission').set({
-//         'percent': percent,
-//         'threshold': threshold,
-//         'higherPercent': higherPercent,
-//         'updatedAt': FieldValue.serverTimestamp(),
-//       });
-//       log("✅ Commission settings saved successfully");
-//     } catch (e) {
-//       log("❌ Failed to save commission: $e");
-//       rethrow;
-//     }
-//   }
-
-//   Future<Map<String, dynamic>?> getCommissionSettings() async {
-//     try {
-//       final doc = await _ref.doc('commission').get();
-//       if (doc.exists) return doc.data();
-//     } catch (e) {
-//       log("❌ Failed to load commission: $e");
-//     }
-//     return null;
-//   }
-// }
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:developer';
 

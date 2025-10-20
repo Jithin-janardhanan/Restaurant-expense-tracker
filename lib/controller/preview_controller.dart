@@ -27,10 +27,16 @@ class OrderPreviewController {
     DateTime endDate;
 
     if (filterType == 'daily') {
-      startDate = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
+      startDate = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+      );
       endDate = startDate.add(const Duration(days: 1));
     } else if (filterType == 'weekly') {
-      startDate = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
+      startDate = selectedDate.subtract(
+        Duration(days: selectedDate.weekday - 1),
+      );
       startDate = DateTime(startDate.year, startDate.month, startDate.day);
       endDate = startDate.add(const Duration(days: 7));
     } else {
@@ -52,10 +58,10 @@ class OrderPreviewController {
         .orderBy('date', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return OrderReport.fromMap(doc.id, doc.data());
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return OrderReport.fromMap(doc.id, doc.data());
+          }).toList();
+        });
   }
 
   /// 🔹 Move to previous/next period
@@ -65,7 +71,11 @@ class OrderPreviewController {
     } else if (filterType == 'weekly') {
       selectedDate = selectedDate.add(Duration(days: forward ? 7 : -7));
     } else {
-      selectedDate = DateTime(selectedDate.year, selectedDate.month + (forward ? 1 : -1), selectedDate.day);
+      selectedDate = DateTime(
+        selectedDate.year,
+        selectedDate.month + (forward ? 1 : -1),
+        selectedDate.day,
+      );
     }
   }
 }
