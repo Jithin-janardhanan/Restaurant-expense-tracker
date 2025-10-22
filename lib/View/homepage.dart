@@ -62,8 +62,8 @@ class HomePage extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.shopping_cart),
-              title: const Text('Products'),
+              leading: const Icon(Icons.dinner_dining_sharp),
+              title: const Text('Dishes'),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(

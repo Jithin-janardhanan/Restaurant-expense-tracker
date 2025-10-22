@@ -28,7 +28,6 @@ class _OrderPageState extends State<OrderPage> {
   int quantity = 1;
   DateTime selectedDate = DateTime.now();
 
-  // Reset form after adding order
   void _resetForm() {
     setState(() {
       selectedProduct = null;
@@ -40,12 +39,18 @@ class _OrderPageState extends State<OrderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Orders'),
+        elevation: 0,
+        backgroundColor: const Color.fromARGB(255, 107, 32, 32),
+        foregroundColor: Colors.white,
+        title: const Text(
+          'Orders',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.receipt_long),
-            tooltip: 'View All Reports',
+            icon: const Icon(Icons.receipt_long_outlined),
             onPressed: () {
               Navigator.push(
                 context,
@@ -57,584 +62,689 @@ class _OrderPageState extends State<OrderPage> {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          children: [
-            // Date Selector
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.calendar_today, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      DateFormat('dd-MM-yyyy').format(selectedDate),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () async {
-                        final picked = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDate,
-                          firstDate: DateTime(2023),
-                          lastDate: DateTime(2030),
-                        );
-                        if (picked != null) {
-                          setState(() => selectedDate = picked);
-                        }
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
+      body: Column(
+        children: [
+          // Top Section - Fixed
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // Date Selector
+                _buildDateSelector(),
+                const SizedBox(height: 12),
 
-            // Waiter Dropdown
-            StreamBuilder<List<Waiter>>(
-              stream: waiterController.getWaiters(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
-                }
-                final waiters = snapshot.data!;
-
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: DropdownButton<String>(
-                    hint: const Text('Select Waiter'),
-                    value: selectedWaiterId,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    onChanged: (id) {
-                      final waiter = waiters.firstWhere((w) => w.id == id);
-                      setState(() {
-                        selectedWaiterId = id;
-                        selectedWaiterName = waiter.name;
-                      });
-                    },
-                    items: waiters
-                        .map(
-                          (w) => DropdownMenuItem(
-                            value: w.id,
-                            child: Text(w.name),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-
-            // Product Dropdown
-            // 🔍 Product Search + Select
-            StreamBuilder<List<Product>>(
-              stream: productController.getProducts(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final products = snapshot.data!;
-                return GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(20),
-                        ),
-                      ),
-                      builder: (context) {
-                        TextEditingController searchController =
-                            TextEditingController();
-                        List<Product> filteredProducts = List.from(products);
-
-                        return StatefulBuilder(
-                          builder: (context, setStateSheet) {
-                            return Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Text(
-                                    'Select Product',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  TextField(
-                                    controller: searchController,
-                                    decoration: InputDecoration(
-                                      prefixIcon: const Icon(Icons.search),
-                                      hintText: 'Search products...',
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    onChanged: (value) {
-                                      setStateSheet(() {
-                                        filteredProducts = products
-                                            .where(
-                                              (p) =>
-                                                  p.name.toLowerCase().contains(
-                                                    value.toLowerCase(),
-                                                  ),
-                                            )
-                                            .toList();
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Expanded(
-                                    child: ListView.builder(
-                                      itemCount: filteredProducts.length,
-                                      itemBuilder: (context, index) {
-                                        final product = filteredProducts[index];
-                                        return ListTile(
-                                          title: Text(product.name),
-                                          subtitle: product.portionPrice != null
-                                              ? const Text(
-                                                  'Portion-based product',
-                                                )
-                                              : Text('₹${product.price ?? 0}'),
-                                          onTap: () {
-                                            setState(() {
-                                              selectedProduct = product;
-                                              selectedPortion = null;
-                                            });
-                                            Navigator.pop(context);
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          selectedProduct?.name ?? 'Select Product',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        const Icon(Icons.arrow_drop_down),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const SizedBox(height: 10),
-
-            // Portion (if applicable)
-            if (selectedProduct?.portionPrice != null)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: DropdownButton<String>(
-                  hint: const Text('Select Portion'),
-                  value: selectedPortion,
-                  isExpanded: true,
-                  underline: const SizedBox(),
-                  onChanged: (portion) =>
-                      setState(() => selectedPortion = portion),
-                  items: selectedProduct!.portionPrice!.keys
-                      .map(
-                        (portion) => DropdownMenuItem(
-                          value: portion,
-                          child: Text(portion),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-
-            if (selectedProduct?.portionPrice != null)
-              const SizedBox(height: 10),
-
-            // Quantity (only for count-based)
-            // Quantity (always visible)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Quantity: '),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () {
-                        if (quantity > 1) setState(() => quantity--);
-                      },
-                    ),
-                    Text(
-                      '$quantity',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () => setState(() => quantity++),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // 🔹 Manual Price Input (only for "Fish")
-            if (selectedProduct != null &&
-                selectedProduct!.name.toLowerCase().contains('fish'))
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: TextField(
-                    keyboardType: TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: const InputDecoration(
-                      labelText: 'Enter Price (per item or portion)',
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        // Store custom price in the product temporarily
-                        selectedProduct = Product(
-                          id: selectedProduct!.id,
-                          name: selectedProduct!.name,
-                          price: double.tryParse(value) ?? 0,
-                          portionPrice: selectedProduct!.portionPrice,
-                        );
-                      });
-                    },
-                  ),
-                ),
-              ),
-            const SizedBox(height: 10),
-
-            // Add Order Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.add_shopping_cart),
-                label: const Text('Add Order'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.all(16),
-                ),
-                onPressed:
-                    selectedWaiterId == null ||
-                        selectedProduct == null ||
-                        (selectedProduct!.portionPrice != null &&
-                            selectedPortion == null)
-                    ? null
-                    : () async {
-                        try {
-                          double price;
-
-                          // 🔹 Case 1: Fish → manual input
-                          // 🔹 Case 1: If product name contains "fish" (Fish, Fish Fry, Fish Curry, etc.)
-                          if (selectedProduct!.name.toLowerCase().contains(
-                            'fish',
-                          )) {
-                            price = selectedProduct!.price ?? 0;
-                            if (price <= 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Please enter a valid price for ${selectedProduct!.name}',
-                                  ),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                              return;
-                            }
-                          }
-                          // 🔹 Case 2: Portion-based → use portion price
-                          else if (selectedProduct!.portionPrice != null &&
-                              selectedPortion != null) {
-                            price =
-                                selectedProduct!
-                                    .portionPrice![selectedPortion] ??
-                                0;
-                          }
-                          // 🔹 Case 3: Normal → use product base price
-                          else {
-                            price = selectedProduct!.price ?? 0;
-                          }
-
-                          final totalPrice = price * quantity;
-
-                          final newOrder = Order(
-                            id: const Uuid().v4(),
-                            waiterId: selectedWaiterId!,
-                            productId: selectedProduct!.id,
-                            productName:
-                                selectedProduct!.name +
-                                (selectedPortion != null
-                                    ? ' ($selectedPortion)'
-                                    : ''),
-                            quantity: quantity,
-                            totalPrice: totalPrice,
-                            date: selectedDate,
-                          );
-
-                          await orderController.addOrder(newOrder);
-
-                          _resetForm(); // Reset form after adding
-
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Order added successfully!'),
-                                backgroundColor: Colors.green,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text('Error adding order: $e'),
-                                backgroundColor: Colors.red,
-                              ),
-                            );
-                          }
-                        }
-                      },
-              ),
-            ),
-
-            const Divider(height: 30),
-
-            // Orders List + Save Day Button
-            if (selectedWaiterId != null)
-              Expanded(
-                child: StreamBuilder<List<Order>>(
-                  stream: orderController.getOrdersByWaiterAndDate(
-                    selectedWaiterId!,
-                    selectedDate,
-                  ),
+                // Waiter Dropdown
+                StreamBuilder<List<Waiter>>(
+                  stream: waiterController.getWaiters(),
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    final orders = snapshot.data!;
-                    final total = orders.fold<double>(
-                      0.0,
-                      (sum, order) => sum + order.totalPrice,
-                    );
-
-                    if (orders.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No orders yet for this date',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                      return const SizedBox(
+                        height: 48,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       );
                     }
-
-                    return Column(
-                      children: [
-                        Text(
-                          "Today's Orders",
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 10),
-                        Expanded(
-                          child: ListView.builder(
-                            itemCount: orders.length,
-                            itemBuilder: (context, index) {
-                              final order = orders[index];
-                              return Card(
-                                child: ListTile(
-                                  leading: CircleAvatar(
-                                    child: Text('${index + 1}'),
-                                  ),
-                                  title: Text(
-                                    order.productName,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  subtitle: Text('Quantity: ${order.quantity}'),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        '₹${order.totalPrice.toStringAsFixed(2)}',
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                        ),
-                                        onPressed: () async {
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (context) => AlertDialog(
-                                              title: const Text(
-                                                'Confirm Delete',
-                                              ),
-                                              content: const Text(
-                                                'Are you sure you want to delete this order?',
-                                              ),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        context,
-                                                        false,
-                                                      ),
-                                                  child: const Text('Cancel'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                        context,
-                                                        true,
-                                                      ),
-                                                  child: const Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-
-                                          if (confirm == true) {
-                                            await orderController.deleteOrder(
-                                              order.id,
-                                            );
-                                          }
-                                        },
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                        const Divider(),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Total:',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Text(
-                                '₹${total.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            icon: const Icon(Icons.save),
-                            label: const Text('Save Data'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(16),
-                              backgroundColor: Colors.blue,
+                    final waiters = snapshot.data!;
+                    return _buildMinimalDropdown(
+                      hint: 'Select Waiter',
+                      value: selectedWaiterId,
+                      items: waiters
+                          .map(
+                            (w) => DropdownMenuItem(
+                              value: w.id,
+                              child: Text(w.name),
                             ),
-                            onPressed: orders.isEmpty
-                                ? null
-                                : () async {
-                                    try {
-                                      await orderController.saveDailySummary(
-                                        waiterId: selectedWaiterId!,
-                                        waiterName: selectedWaiterName!,
-                                        date: selectedDate,
-                                        orders: orders,
-                                      );
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Day data saved successfully!',
-                                            ),
-                                            backgroundColor: Colors.green,
-                                          ),
-                                        );
-                                      }
-                                    } catch (e) {
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Error saving: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                          ),
-                        ),
-                      ],
+                          )
+                          .toList(),
+                      onChanged: (id) {
+                        final waiter = waiters.firstWhere((w) => w.id == id);
+                        setState(() {
+                          selectedWaiterId = id;
+                          selectedWaiterName = waiter.name;
+                        });
+                      },
                     );
                   },
                 ),
+                const SizedBox(height: 12),
+
+                // Product Selector
+                StreamBuilder<List<Product>>(
+                  stream: productController.getProducts(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const SizedBox(
+                        height: 48,
+                        child: Center(
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    final products = snapshot.data!;
+                    return _buildProductSelector(products);
+                  },
+                ),
+
+                // Portion Selector
+                if (selectedProduct?.portionPrice != null) ...[
+                  const SizedBox(height: 12),
+                  _buildMinimalDropdown(
+                    hint: 'Select Portion',
+                    value: selectedPortion,
+                    items: selectedProduct!.portionPrice!.keys
+                        .map((p) => DropdownMenuItem(value: p, child: Text(p)))
+                        .toList(),
+                    onChanged: (portion) =>
+                        setState(() => selectedPortion = portion),
+                  ),
+                ],
+
+                const SizedBox(height: 12),
+
+                // Quantity Selector
+                _buildQuantitySelector(),
+
+                // Manual Price Input for Fish
+                if (selectedProduct != null &&
+                    selectedProduct!.name.toLowerCase().contains('fish')) ...[
+                  const SizedBox(height: 12),
+                  _buildPriceInput(),
+                ],
+
+                const SizedBox(height: 16),
+
+                // Add Order Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed:
+                        selectedWaiterId == null ||
+                            selectedProduct == null ||
+                            (selectedProduct!.portionPrice != null &&
+                                selectedPortion == null)
+                        ? null
+                        : _addOrder,
+                    child: const Text(
+                      'Add Order',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const Divider(height: 1, thickness: 1),
+
+          // Orders List
+          if (selectedWaiterId != null)
+            Expanded(
+              child: StreamBuilder<List<Order>>(
+                stream: orderController.getOrdersByWaiterAndDate(
+                  selectedWaiterId!,
+                  selectedDate,
+                ),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    );
+                  }
+
+                  final orders = snapshot.data!;
+                  final total = orders.fold<double>(
+                    0.0,
+                    (sum, order) => sum + order.totalPrice,
+                  );
+
+                  if (orders.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'No orders yet',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    );
+                  }
+
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: orders.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 8),
+                          itemBuilder: (context, index) {
+                            final order = orders[index];
+                            return _buildOrderItem(order, index);
+                          },
+                        ),
+                      ),
+                      Container(
+                        color: Colors.white,
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '₹${total.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              width: double.infinity,
+                              height: 48,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color.fromARGB(
+                                    221,
+                                    193,
+                                    68,
+                                    68,
+                                  ),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                onPressed: orders.isEmpty
+                                    ? null
+                                    : () => _saveDailySummary(orders),
+                                child: const Text(
+                                  'Save Data',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDateSelector() {
+    return InkWell(
+      onTap: () async {
+        final picked = await showDatePicker(
+          context: context,
+          initialDate: selectedDate,
+          firstDate: DateTime(2023),
+          lastDate: DateTime(2030),
+        );
+        if (picked != null) {
+          setState(() => selectedDate = picked);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.calendar_today, size: 18, color: Colors.grey[700]),
+            const SizedBox(width: 12),
+            Text(
+              DateFormat('dd MMM yyyy').format(selectedDate),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMinimalDropdown({
+    required String hint,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required void Function(String?) onChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButton<String>(
+        hint: Text(hint, style: TextStyle(color: Colors.grey[600])),
+        value: value,
+        isExpanded: true,
+        underline: const SizedBox(),
+        icon: Icon(Icons.keyboard_arrow_down, color: Colors.grey[600]),
+        onChanged: onChanged,
+        items: items,
+      ),
+    );
+  }
+
+  Widget _buildProductSelector(List<Product> products) {
+    return InkWell(
+      onTap: () => _showProductSearch(products),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.grey[300]!),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              selectedProduct?.name ?? 'Select Product',
+              style: TextStyle(
+                fontSize: 15,
+                color: selectedProduct == null
+                    ? Colors.grey[600]
+                    : Colors.black87,
+                fontWeight: selectedProduct == null
+                    ? FontWeight.w400
+                    : FontWeight.w500,
+              ),
+            ),
+            Icon(Icons.search, size: 20, color: Colors.grey[600]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showProductSearch(List<Product> products) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        TextEditingController searchController = TextEditingController();
+        List<Product> filteredProducts = List.from(products);
+
+        return StatefulBuilder(
+          builder: (context, setStateSheet) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: searchController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Search products...',
+                      prefixIcon: const Icon(Icons.search, size: 20),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setStateSheet(() {
+                        filteredProducts = products
+                            .where(
+                              (p) => p.name.toLowerCase().contains(
+                                value.toLowerCase(),
+                              ),
+                            )
+                            .toList();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  LimitedBox(
+                    maxHeight: MediaQuery.of(context).size.height * 0.5,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: filteredProducts.length,
+                      itemBuilder: (context, index) {
+                        final product = filteredProducts[index];
+                        return ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          title: Text(
+                            product.name,
+                            style: const TextStyle(fontSize: 15),
+                          ),
+                          subtitle: product.portionPrice != null
+                              ? Text(
+                                  'Portion-based',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                )
+                              : Text(
+                                  '₹${product.price ?? 0}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                          onTap: () {
+                            setState(() {
+                              selectedProduct = product;
+                              selectedPortion = null;
+                            });
+                            Navigator.pop(context);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildQuantitySelector() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('Quantity', style: TextStyle(fontSize: 15)),
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove, size: 20),
+                onPressed: quantity > 1
+                    ? () => setState(() => quantity--)
+                    : null,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 6,
+                ),
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  '$quantity',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add, size: 20),
+                onPressed: () => setState(() => quantity++),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceInput() {
+    return TextField(
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: 'Price per item',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+      ),
+      onChanged: (value) {
+        setState(() {
+          selectedProduct = Product(
+            id: selectedProduct!.id,
+            name: selectedProduct!.name,
+            price: double.tryParse(value) ?? 0,
+            portionPrice: selectedProduct!.portionPrice,
+          );
+        });
+      },
+    );
+  }
+
+  Widget _buildOrderItem(Order order, int index) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  order.productName,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Qty: ${order.quantity}',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            '₹${order.totalPrice.toStringAsFixed(2)}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 8),
+          IconButton(
+            icon: Icon(Icons.close, size: 20, color: Colors.grey[600]),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            onPressed: () => _deleteOrder(order),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addOrder() async {
+    try {
+      double price;
+
+      if (selectedProduct!.name.toLowerCase().contains('fish')) {
+        price = selectedProduct!.price ?? 0;
+        if (price <= 0) {
+          _showSnackBar(
+            'Please enter a valid price for ${selectedProduct!.name}',
+            isError: true,
+          );
+          return;
+        }
+      } else if (selectedProduct!.portionPrice != null &&
+          selectedPortion != null) {
+        price = selectedProduct!.portionPrice![selectedPortion] ?? 0;
+      } else {
+        price = selectedProduct!.price ?? 0;
+      }
+
+      final totalPrice = price * quantity;
+
+      final newOrder = Order(
+        id: const Uuid().v4(),
+        waiterId: selectedWaiterId!,
+        productId: selectedProduct!.id,
+        productName:
+            selectedProduct!.name +
+            (selectedPortion != null ? ' ($selectedPortion)' : ''),
+        quantity: quantity,
+        totalPrice: totalPrice,
+        date: selectedDate,
+      );
+
+      await orderController.addOrder(newOrder);
+      _resetForm();
+      _showSnackBar('Order added');
+    } catch (e) {
+      _showSnackBar('Error: $e', isError: true);
+    }
+  }
+
+  Future<void> _deleteOrder(Order order) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text(
+          'Delete Order',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+        ),
+        content: const Text('Remove this order?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await orderController.deleteOrder(order.id);
+    }
+  }
+
+  Future<void> _saveDailySummary(List<Order> orders) async {
+    try {
+      await orderController.saveDailySummary(
+        waiterId: selectedWaiterId!,
+        waiterName: selectedWaiterName!,
+        date: selectedDate,
+        orders: orders,
+      );
+      _showSnackBar('Data saved successfully');
+    } catch (e) {
+      _showSnackBar('Error: $e', isError: true);
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.red[700] : Colors.black87,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }

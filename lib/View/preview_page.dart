@@ -172,7 +172,7 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             IconButton(
-              icon: const Icon(Icons.arrow_back),
+              icon: const Icon(Icons.arrow_back_ios_sharp),
               onPressed: () {
                 setState(() => controller.moveDate(false));
               },
@@ -193,7 +193,7 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
               ],
             ),
             IconButton(
-              icon: const Icon(Icons.arrow_forward),
+              icon: const Icon(Icons.arrow_forward_sharp),
               onPressed: () {
                 setState(() => controller.moveDate(true));
               },
