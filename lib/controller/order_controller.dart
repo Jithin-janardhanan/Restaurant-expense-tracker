@@ -36,50 +36,78 @@ class OrderController {
   }
 
   // ✅ FIXED: Filter by waiter first, then filter date in app (no composite index needed)
-  Stream<List<Order>> getOrdersByWaiterAndDate(String waiterId, DateTime date) {
-    final startOfDay = DateTime(date.year, date.month, date.day, 0, 0, 0);
-    final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+  // Stream<List<Order>> getOrdersByWaiterAndDate(String waiterId, DateTime date) {
+  //   final startOfDay = DateTime(date.year, date.month, date.day, 0, 0, 0);
+  //   final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
 
-    log('OrderController: Querying orders for:');
-    log('  - Waiter ID: $waiterId');
-    log('  - Date range: $startOfDay to $endOfDay');
+  //   log('OrderController: Querying orders for:');
+  //   log('  - Waiter ID: $waiterId');
+  //   log('  - Date range: $startOfDay to $endOfDay');
 
-    // Query only by waiterId (simple index), then filter by date in the app
-    return _ordersRef.where('waiterId', isEqualTo: waiterId).snapshots().map((
-      snapshot,
-    ) {
-      log('OrderController: Query returned ${snapshot.docs.length} documents');
+  //   // Query only by waiterId (simple index), then filter by date in the app
+  //   return _ordersRef.where('waiterId', isEqualTo: waiterId).snapshots().map((
+  //     snapshot,
+  //   ) {
+  //     log('OrderController: Query returned ${snapshot.docs.length} documents');
 
-      // Filter by date in the app
-      final orders = snapshot.docs
-          .map((doc) {
-            try {
-              final order = Order.fromMap(doc.data() as Map<String, dynamic>);
-              return order;
-            } catch (e) {
-              log('  - Error parsing order: $e');
-              return null;
-            }
-          })
-          .where((order) => order != null)
-          .cast<Order>()
-          .where((order) {
-            // Filter by date
-            final orderDate = DateTime(
-              order.date.year,
-              order.date.month,
-              order.date.day,
-            );
-            final selectedDate = DateTime(date.year, date.month, date.day);
-            return orderDate.isAtSameMomentAs(selectedDate);
-          })
-          .toList();
+  //     // Filter by date in the app
+  //     final orders = snapshot.docs
+  //         .map((doc) {
+  //           try {
+  //             final order = Order.fromMap(doc.data() as Map<String, dynamic>);
+  //             return order;
+  //           } catch (e) {
+  //             log('  - Error parsing order: $e');
+  //             return null;
+  //           }
+  //         })
+  //         .where((order) => order != null)
+  //         .cast<Order>()
+  //         .where((order) {
+  //           // Filter by date
+  //           final orderDate = DateTime(
+  //             order.date.year,
+  //             order.date.month,
+  //             order.date.day,
+  //           );
+  //           final selectedDate = DateTime(date.year, date.month, date.day);
+  //           return orderDate.isAtSameMomentAs(selectedDate);
+  //         })
+  //         .toList();
 
-      log('OrderController: Filtered to ${orders.length} orders for date');
+  //     log('OrderController: Filtered to ${orders.length} orders for date');
 
-      return orders;
-    });
-  }
+  //     return orders;
+  //   });
+  // }
+Stream<List<Order>> getOrdersByWaiterAndDate(String waiterId, DateTime date) {
+  final startOfDay = DateTime(date.year, date.month, date.day, 0, 0, 0);
+  final endOfDay = DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+  log('OrderController: Getting sorted orders for waiter: $waiterId on $date');
+
+  return _ordersRef
+      .where('waiterId', isEqualTo: waiterId)
+      .orderBy('date', descending: true) // 👈 sort by date (newest first)
+      .snapshots()
+      .map((snapshot) {
+    final orders = snapshot.docs
+        .map((doc) => Order.fromMap(doc.data() as Map<String, dynamic>))
+        .where((order) {
+          final orderDate = DateTime(
+            order.date.year,
+            order.date.month,
+            order.date.day,
+          );
+          final selectedDate = DateTime(date.year, date.month, date.day);
+          return orderDate.isAtSameMomentAs(selectedDate);
+        })
+        .toList();
+
+    log('OrderController: Returning ${orders.length} sorted orders');
+    return orders;
+  });
+}
 
   Future<void> deleteOrder(String id) async {
     try {

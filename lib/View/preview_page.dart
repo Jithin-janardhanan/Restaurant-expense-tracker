@@ -243,7 +243,7 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Total Waiter Commission:',
+                  'Total Commission:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -265,7 +265,7 @@ class _OrderPreviewPageState extends State<OrderPreviewPage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'Net Income (After Commission):',
+                  'Income (AC):',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 Text(
